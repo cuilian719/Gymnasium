@@ -5,6 +5,7 @@ from __future__ import annotations
 import multiprocessing as mp
 from ctypes import c_bool
 from functools import singledispatch
+from multiprocessing.sharedctypes import SynchronizedArray
 from typing import Any
 
 import numpy as np
@@ -25,14 +26,13 @@ from gymnasium.spaces import (
     flatten,
 )
 
-
 __all__ = ["create_shared_memory", "read_from_shared_memory", "write_to_shared_memory"]
 
 
 @singledispatch
 def create_shared_memory(
     space: Space[Any], n: int = 1, ctx=mp
-) -> dict[str, Any] | tuple[Any, ...] | mp.Array:
+) -> dict[str, Any] | tuple[Any, ...] | SynchronizedArray:
     """Create a shared memory object, to be shared across processes.
 
     This eventually contains the observations from the vectorized environment.
@@ -109,7 +109,7 @@ def _create_dynamic_shared_memory(space: Graph | Sequence, n: int = 1, ctx=mp):
 
 @singledispatch
 def read_from_shared_memory(
-    space: Space, shared_memory: dict | tuple | mp.Array, n: int = 1
+    space: Space, shared_memory: dict | tuple | SynchronizedArray, n: int = 1
 ) -> dict[str, Any] | tuple[Any, ...] | np.ndarray:
     """Read the batch of observations from shared memory as a numpy array.
 
@@ -156,7 +156,7 @@ def _read_base_from_shared_memory(
 def _read_tuple_from_shared_memory(space: Tuple, shared_memory, n: int = 1):
     return tuple(
         read_from_shared_memory(subspace, memory, n=n)
-        for (memory, subspace) in zip(shared_memory, space.spaces)
+        for (memory, subspace) in zip(shared_memory, space.spaces, strict=True)
     )
 
 
@@ -196,7 +196,7 @@ def _read_one_of_from_shared_memory(
 
     subspace_samples = tuple(
         read_from_shared_memory(subspace, memory, n=n)
-        for (memory, subspace) in zip(shared_memory[1:], space.spaces)
+        for (memory, subspace) in zip(shared_memory[1:], space.spaces, strict=True)
     )
     return tuple(
         (sample_index, subspace_samples[sample_index][index])
@@ -209,7 +209,7 @@ def write_to_shared_memory(
     space: Space,
     index: int,
     value: np.ndarray,
-    shared_memory: dict[str, Any] | tuple[Any, ...] | mp.Array,
+    shared_memory: dict[str, Any] | tuple[Any, ...] | SynchronizedArray,
 ):
     """Write the observation of a single environment into shared memory.
 
@@ -255,7 +255,9 @@ def _write_base_to_shared_memory(
 def _write_tuple_to_shared_memory(
     space: Tuple, index: int, values: tuple[Any, ...], shared_memory
 ):
-    for value, memory, subspace in zip(values, shared_memory, space.spaces):
+    for value, memory, subspace in zip(
+        values, shared_memory, space.spaces, strict=True
+    ):
         write_to_shared_memory(subspace, index, value, memory)
 
 

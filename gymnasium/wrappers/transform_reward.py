@@ -6,14 +6,14 @@
 
 from __future__ import annotations
 
-from typing import Callable, SupportsFloat
+from collections.abc import Callable
+from typing import SupportsFloat
 
 import numpy as np
 
 import gymnasium as gym
 from gymnasium.core import ActType, ObsType
 from gymnasium.error import InvalidBound
-
 
 __all__ = ["TransformReward", "ClipReward"]
 

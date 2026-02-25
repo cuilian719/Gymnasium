@@ -1,14 +1,15 @@
 """
-Training A2C with Vector Envs and Domain Randomization
-======================================================
+Speeding up A2C Training with Vector Envs
+=========================================
 
+This tutorial demonstrates training with vector environments to it speed up.
 """
 
 # %%
 # Notice
 # ------
 #
-# If you encounter an RuntimeError like the following comment raised on multiprocessing/spawn.py, wrap up the code from ``gym.vector.make=`` or ``gym.vector.AsyncVectorEnv`` to the end of the code by ``if__name__ == '__main__'``.
+# If you encounter an RuntimeError like the following comment raised on multiprocessing/spawn.py, wrap up the code from ``gym.make_vec=`` or ``gym.vector.AsyncVectorEnv`` to the end of the code by ``if__name__ == '__main__'``.
 #
 # ``An attempt has been made to start a new process before the current process has finished its bootstrapping phase.``
 #
@@ -66,7 +67,6 @@ from torch import optim
 from tqdm import tqdm
 
 import gymnasium as gym
-
 
 # %%
 # Advantage Actor-Critic (A2C)
@@ -180,7 +180,7 @@ class A2C(nn.Module):
         actions = action_pd.sample()
         action_log_probs = action_pd.log_prob(actions)
         entropy = action_pd.entropy()
-        return (actions, action_log_probs, state_values, entropy)
+        return actions, action_log_probs, state_values, entropy
 
     def get_losses(
         self,
@@ -268,7 +268,7 @@ class A2C(nn.Module):
 # The simplest way to create vector environments is by calling `gym.vector.make`, which creates multiple instances of the same environment:
 #
 
-envs = gym.vector.make("LunarLander-v3", num_envs=3, max_episode_steps=600)
+envs = gym.make_vec("LunarLander-v3", num_envs=3, max_episode_steps=600)
 
 
 # %%
@@ -281,7 +281,7 @@ envs = gym.vector.make("LunarLander-v3", num_envs=3, max_episode_steps=600)
 # Manually setting up 3 parallel 'LunarLander-v3' envs with different parameters:
 
 
-envs = gym.vector.AsyncVectorEnv(
+envs = gym.vector.SyncVectorEnv(
     [
         lambda: gym.make(
             "LunarLander-v3",
@@ -314,7 +314,7 @@ envs = gym.vector.AsyncVectorEnv(
 #
 
 
-envs = gym.vector.AsyncVectorEnv(
+envs = gym.vector.SyncVectorEnv(
     [
         lambda: gym.make(
             "LunarLander-v3",
@@ -393,7 +393,7 @@ if randomize_domain:
     )
 
 else:
-    envs = gym.vector.make("LunarLander-v3", num_envs=n_envs, max_episode_steps=600)
+    envs = gym.make_vec("LunarLander-v3", num_envs=n_envs, max_episode_steps=600)
 
 
 obs_shape = envs.single_observation_space.shape[0]
@@ -425,7 +425,9 @@ agent = A2C(obs_shape, action_shape, device, critic_lr, actor_lr, n_envs)
 #
 
 # create a wrapper environment to save episode returns and episode lengths
-envs_wrapper = gym.wrappers.RecordEpisodeStatistics(envs, deque_size=n_envs * n_updates)
+envs_wrapper = gym.wrappers.vector.RecordEpisodeStatistics(
+    envs, buffer_length=n_envs * n_updates
+)
 
 critic_losses = []
 actor_losses = []
@@ -440,6 +442,7 @@ for sample_phase in tqdm(range(n_updates)):
     ep_value_preds = torch.zeros(n_steps_per_update, n_envs, device=device)
     ep_rewards = torch.zeros(n_steps_per_update, n_envs, device=device)
     ep_action_log_probs = torch.zeros(n_steps_per_update, n_envs, device=device)
+    ep_entropies = torch.zeros(n_steps_per_update, n_envs, device=device)
     masks = torch.zeros(n_steps_per_update, n_envs, device=device)
 
     # at the start of training reset all envs to get an initial state
@@ -461,6 +464,7 @@ for sample_phase in tqdm(range(n_updates)):
         ep_value_preds[step] = torch.squeeze(state_value_preds)
         ep_rewards[step] = torch.tensor(rewards, device=device)
         ep_action_log_probs[step] = action_log_probs
+        ep_entropies[step] = entropy
 
         # add a mask (for the return calculation later);
         # for each env the mask is 1 if the episode is ongoing and 0 if it is terminated (not by truncation!)
@@ -471,7 +475,7 @@ for sample_phase in tqdm(range(n_updates)):
         ep_rewards,
         ep_action_log_probs,
         ep_value_preds,
-        entropy,
+        ep_entropies,
         masks,
         gamma,
         lam,
@@ -485,7 +489,7 @@ for sample_phase in tqdm(range(n_updates)):
     # log the losses and entropy
     critic_losses.append(critic_loss.detach().cpu().numpy())
     actor_losses.append(actor_loss.detach().cpu().numpy())
-    entropies.append(entropy.detach().mean().cpu().numpy())
+    entropies.append(ep_entropies.detach().mean().cpu().numpy())
 
 
 # %%

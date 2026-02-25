@@ -1,6 +1,6 @@
+from collections.abc import Callable
 from functools import partial
 from itertools import product
-from typing import Callable
 
 import numpy as np
 import pygame
@@ -11,7 +11,6 @@ from pygame.event import Event
 import gymnasium as gym
 from gymnasium.utils.play import MissingKeysToAction, PlayableGame, play
 from tests.testing_env import GenericTestEnv
-
 
 RELEVANT_KEY_1 = ord("a")  # 97
 RELEVANT_KEY_2 = ord("d")  # 100
@@ -48,11 +47,15 @@ class PlayStatus:
         self.last_observation = obs_tp1
 
 
-def dummy_keys_to_action():
+def dummy_keys_to_action() -> dict[tuple[int], int]:
     return {(RELEVANT_KEY_1,): 0, (RELEVANT_KEY_2,): 1}
 
 
-def dummy_keys_to_action_str():
+def dummy_keys_to_action_int() -> dict[int, int]:
+    return {RELEVANT_KEY_1: 0, RELEVANT_KEY_2: 1}
+
+
+def dummy_keys_to_action_str() -> dict[str, int]:
     """{'a': 0, 'd': 1}"""
     return {chr(RELEVANT_KEY_1): 0, chr(RELEVANT_KEY_2): 1}
 
@@ -147,7 +150,7 @@ def test_play_loop_real_env():
 
     # If apply_wrapper is true, we provide keys_to_action through the environment. If str_keys is true, the
     # keys_to_action dictionary will have strings as keys
-    for apply_wrapper, str_keys in product([False, True], [False, True]):
+    for apply_wrapper, key_type in product([False, True], ["str", "int", "tuple"]):
         # set of key events to inject into the play loop as callback
         callback_events = [
             Event(KEYDOWN, {"key": RELEVANT_KEY_1}),
@@ -164,7 +167,16 @@ def test_play_loop_real_env():
         ]
         keydown_events = [k for k in callback_events if k.type == KEYDOWN]
 
-        def callback(obs_t, obs_tp1, action, rew, terminated, truncated, info):
+        def callback(
+            obs_t,
+            obs_tp1,
+            action,
+            rew,
+            terminated,
+            truncated,
+            info,
+            callback_events=callback_events,
+        ):
             pygame_event = callback_events.pop(0)
             event.post(pygame_event)
 
@@ -178,15 +190,28 @@ def test_play_loop_real_env():
 
         env = gym.make(ENV, render_mode="rgb_array", disable_env_checker=True)
         env.reset(seed=SEED)
-        keys_to_action = (
-            dummy_keys_to_action_str() if str_keys else dummy_keys_to_action()
-        )
+
+        if key_type == "tuple":
+            keys_to_action = dummy_keys_to_action()
+        elif key_type == "str":
+            keys_to_action = dummy_keys_to_action_str()
+        elif key_type == "int":
+            keys_to_action = dummy_keys_to_action_int()
+        else:
+            raise AssertionError()
 
         # first action is 0 because at the first iteration
         # we can not inject a callback event into play()
         obs, _, _, _, _ = env.step(0)
         for e in keydown_events:
-            action = keys_to_action[chr(e.key) if str_keys else (e.key,)]
+            if key_type == "tuple":
+                action = keys_to_action[(e.key,)]
+            elif key_type == "str":
+                action = keys_to_action[chr(e.key)]
+            elif key_type == "int":
+                action = keys_to_action[e.key]
+            else:
+                raise AssertionError()
             obs, _, _, _, _ = env.step(action)
 
         env_play = gym.make(ENV, render_mode="rgb_array", disable_env_checker=True)

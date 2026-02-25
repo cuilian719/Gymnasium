@@ -1,13 +1,11 @@
 """Testing utilitys for `gymnasium.vector`."""
 
 import time
-from typing import Optional
 
 import numpy as np
 
 import gymnasium as gym
 from gymnasium.spaces import Box, Dict, Discrete, MultiBinary, MultiDiscrete, Tuple
-
 
 BaseGymSpaces = (Box, Discrete, MultiDiscrete, MultiBinary)
 
@@ -67,7 +65,7 @@ class SlowEnv(gym.Env):
         )
         self.action_space = Box(low=0.0, high=1.0, shape=(), dtype=np.float32)
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
+    def reset(self, *, seed: int | None = None, options: dict | None = None):
         """Resets the environment with a time sleep."""
         super().reset(seed=seed)
         if self.slow_reset > 0:
@@ -113,7 +111,7 @@ class CustomSpaceEnv(gym.Env):
         self.observation_space = CustomSpace()
         self.action_space = CustomSpace()
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
+    def reset(self, *, seed: int | None = None, options: dict | None = None):
         """Resets the environment."""
         super().reset(seed=seed)
         return "reset", {}

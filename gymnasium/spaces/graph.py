@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, NamedTuple, Sequence
+from collections.abc import Sequence
+from typing import Any, NamedTuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -66,13 +67,13 @@ class Graph(Space[GraphInstance]):
             edge_space (Union[None, Box, Discrete]): space of the edge features.
             seed: Optionally, you can use this argument to seed the RNG that is used to sample from the space.
         """
-        assert isinstance(
-            node_space, (Box, Discrete)
-        ), f"Values of the node_space should be instances of Box or Discrete, got {type(node_space)}"
+        assert isinstance(node_space, (Box, Discrete)), (
+            f"Values of the node_space should be instances of Box or Discrete, got {type(node_space)}"
+        )
         if edge_space is not None:
-            assert isinstance(
-                edge_space, (Box, Discrete)
-            ), f"Values of the edge_space should be instances of None Box or Discrete, got {type(edge_space)}"
+            assert isinstance(edge_space, (Box, Discrete)), (
+                f"Values of the edge_space should be instances of None Box or Discrete, got {type(edge_space)}"
+            )
 
         self.node_space = node_space
         self.edge_space = edge_space
@@ -177,7 +178,15 @@ class Graph(Space[GraphInstance]):
 
     def sample(
         self,
-        mask: None | (
+        mask: None
+        | (
+            tuple[
+                NDArray[Any] | tuple[Any, ...] | None,
+                NDArray[Any] | tuple[Any, ...] | None,
+            ]
+        ) = None,
+        probability: None
+        | (
             tuple[
                 NDArray[Any] | tuple[Any, ...] | None,
                 NDArray[Any] | tuple[Any, ...] | None,
@@ -192,20 +201,31 @@ class Graph(Space[GraphInstance]):
             mask: An optional tuple of optional node and edge mask that is only possible with Discrete spaces
                 (Box spaces don't support sample masks).
                 If no ``num_edges`` is provided then the ``edge_mask`` is multiplied by the number of edges
+            probability: An optional tuple of optional node and edge probability mask that is only possible with Discrete spaces
+                (Box spaces don't support sample probability masks).
+                If no ``num_edges`` is provided then the ``edge_mask`` is multiplied by the number of edges
             num_nodes: The number of nodes that will be sampled, the default is `10` nodes
             num_edges: An optional number of edges, otherwise, a random number between `0` and :math:`num_nodes^2`
 
         Returns:
             A :class:`GraphInstance` with attributes `.nodes`, `.edges`, and `.edge_links`.
         """
-        assert (
-            num_nodes > 0
-        ), f"The number of nodes is expected to be greater than 0, actual value: {num_nodes}"
+        assert num_nodes > 0, (
+            f"The number of nodes is expected to be greater than 0, actual value: {num_nodes}"
+        )
 
-        if mask is not None:
+        if mask is not None and probability is not None:
+            raise ValueError(
+                f"Only one of `mask` or `probability` can be provided, actual values: mask={mask}, probability={probability}"
+            )
+        elif mask is not None:
             node_space_mask, edge_space_mask = mask
+            mask_type = "mask"
+        elif probability is not None:
+            node_space_mask, edge_space_mask = probability
+            mask_type = "probability"
         else:
-            node_space_mask, edge_space_mask = None, None
+            node_space_mask = edge_space_mask = mask_type = None
 
         # we only have edges when we have at least 2 nodes
         if num_edges is None:
@@ -222,21 +242,25 @@ class Graph(Space[GraphInstance]):
                 gym.logger.warn(
                     f"The number of edges is set ({num_edges}) but the edge space is None."
                 )
-            assert (
-                num_edges >= 0
-            ), f"Expects the number of edges to be greater than 0, actual value: {num_edges}"
+            assert num_edges >= 0, (
+                f"Expects the number of edges to be greater than 0, actual value: {num_edges}"
+            )
         assert num_edges is not None
 
         sampled_node_space = self._generate_sample_space(self.node_space, num_nodes)
+        assert sampled_node_space is not None
         sampled_edge_space = self._generate_sample_space(self.edge_space, num_edges)
 
-        assert sampled_node_space is not None
-        sampled_nodes = sampled_node_space.sample(node_space_mask)
-        sampled_edges = (
-            sampled_edge_space.sample(edge_space_mask)
-            if sampled_edge_space is not None
-            else None
-        )
+        if mask_type is not None:
+            node_sample_kwargs = {mask_type: node_space_mask}
+            edge_sample_kwargs = {mask_type: edge_space_mask}
+        else:
+            node_sample_kwargs = edge_sample_kwargs = {}
+
+        sampled_nodes = sampled_node_space.sample(**node_sample_kwargs)
+        sampled_edges = None
+        if sampled_edge_space is not None:
+            sampled_edges = sampled_edge_space.sample(**edge_sample_kwargs)
 
         sampled_edge_links = None
         if sampled_edges is not None and num_edges > 0:

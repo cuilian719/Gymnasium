@@ -10,7 +10,6 @@ import gymnasium as gym
 from gymnasium.core import WrapperActType, WrapperObsType
 from gymnasium.spaces import Box
 
-
 __all__ = ["AtariPreprocessing"]
 
 
@@ -95,10 +94,10 @@ class AtariPreprocessing(gym.Wrapper, gym.utils.RecordConstructorArgs):
 
         try:
             import cv2  # noqa: F401
-        except ImportError:
+        except ImportError as e:
             raise gym.error.DependencyNotInstalled(
                 'opencv-python package not installed, run `pip install "gymnasium[other]"` to get dependencies for atari'
-            )
+            ) from e
 
         assert frame_skip > 0
         assert (isinstance(screen_size, int) and screen_size > 0) or (
@@ -106,13 +105,14 @@ class AtariPreprocessing(gym.Wrapper, gym.utils.RecordConstructorArgs):
             and len(screen_size) == 2
             and all(isinstance(size, int) and size > 0 for size in screen_size)
         ), f"Expect the `screen_size` to be positive, actually: {screen_size}"
-        assert noop_max >= 0
         if frame_skip > 1 and getattr(env.unwrapped, "_frameskip", None) != 1:
             raise ValueError(
                 "Disable frame-skipping in the original env. Otherwise, more than one frame-skip will happen as through this wrapper"
             )
+        assert noop_max >= 0
         self.noop_max = noop_max
-        assert env.unwrapped.get_action_meanings()[0] == "NOOP"
+        if noop_max > 0:
+            assert env.unwrapped.get_action_meanings()[0] == "NOOP"
 
         self.frame_skip = frame_skip
         self.screen_size: tuple[int, int] = (
@@ -142,7 +142,7 @@ class AtariPreprocessing(gym.Wrapper, gym.utils.RecordConstructorArgs):
         self.game_over = False
 
         _low, _high, _dtype = (0, 1, np.float32) if scale_obs else (0, 255, np.uint8)
-        _shape = self.screen_size + (1 if grayscale_obs else 3,)
+        _shape = (self.screen_size[1], self.screen_size[0], 1 if grayscale_obs else 3)
         if grayscale_obs and not grayscale_newaxis:
             _shape = _shape[:-1]  # Remove channel axis
         self.observation_space = Box(low=_low, high=_high, shape=_shape, dtype=_dtype)

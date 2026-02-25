@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from collections import deque
-from typing import Callable, List
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -11,6 +12,9 @@ import gymnasium as gym
 from gymnasium import Env, logger
 from gymnasium.core import ActType, ObsType
 from gymnasium.error import DependencyNotInstalled
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
 
 
 try:
@@ -85,7 +89,7 @@ class PlayableGame:
 
     def _get_video_size(self, zoom: float | None = None) -> tuple[int, int]:
         rendered = self.env.render()
-        if isinstance(rendered, List):
+        if isinstance(rendered, list):
             rendered = rendered[-1]
         assert rendered is not None and isinstance(rendered, np.ndarray)
         video_size = (rendered.shape[1], rendered.shape[0])
@@ -267,6 +271,8 @@ def play(
 
     key_code_to_action = {}
     for key_combination, action in keys_to_action.items():
+        if isinstance(key_combination, int):
+            key_combination = (key_combination,)
         key_code = tuple(
             sorted(ord(key) if isinstance(key, str) else key for key in key_combination)
         )
@@ -293,7 +299,7 @@ def play(
                 callback(prev_obs, obs, action, rew, terminated, truncated, info)
         if obs is not None:
             rendered = env.render()
-            if isinstance(rendered, List):
+            if isinstance(rendered, list):
                 rendered = rendered[-1]
             assert rendered is not None and isinstance(rendered, np.ndarray)
             display_arr(
@@ -366,10 +372,10 @@ class PlayPlot:
         self.fig, self.ax = plt.subplots(num_plots)
         if num_plots == 1:
             self.ax = [self.ax]
-        for axis, name in zip(self.ax, plot_names):
+        for axis, name in zip(self.ax, plot_names, strict=True):
             axis.set_title(name)
         self.t = 0
-        self.cur_plot: list[plt.Axes | None] = [None for _ in range(num_plots)]
+        self.cur_plot: list[Axes | None] = [None for _ in range(num_plots)]
         self.data = [deque(maxlen=horizon_timesteps) for _ in range(num_plots)]
 
     def callback(
@@ -396,7 +402,7 @@ class PlayPlot:
         points = self.data_callback(
             obs_t, obs_tp1, action, rew, terminated, truncated, info
         )
-        for point, data_series in zip(points, self.data):
+        for point, data_series in zip(points, self.data, strict=True):
             data_series.append(point)
         self.t += 1
 

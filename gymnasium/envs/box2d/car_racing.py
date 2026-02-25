@@ -1,7 +1,6 @@
 __credits__ = ["Andrea PIERRÉ"]
 
 import math
-from typing import Optional, Union
 
 import numpy as np
 
@@ -10,7 +9,6 @@ from gymnasium import spaces
 from gymnasium.envs.box2d.car_dynamics import Car
 from gymnasium.error import DependencyNotInstalled, InvalidAction
 from gymnasium.utils import EzPickle
-
 
 try:
     import Box2D
@@ -129,8 +127,8 @@ class CarRacing(gym.Env, EzPickle):
 
     If discrete there are 5 actions:
     - 0: do nothing
-    - 1: steer left
-    - 2: steer right
+    - 1: steer right
+    - 2: steer left
     - 3: gas
     - 4: brake
 
@@ -165,8 +163,8 @@ class CarRacing(gym.Env, EzPickle):
     * `domain_randomize=False` enables the domain randomized variant of the environment.
      In this scenario, the background and track colours are different on every reset.
 
-    * `continuous=True` converts the environment to use discrete action space.
-     The discrete action space has 5 actions: [do nothing, left, right, gas, brake].
+    * `continuous=True` specifies if the agent has continuous (true) or discrete (false) actions.
+     See action space section for a description of each.
 
     ## Reset Arguments
 
@@ -212,7 +210,7 @@ class CarRacing(gym.Env, EzPickle):
 
     def __init__(
         self,
-        render_mode: Optional[str] = None,
+        render_mode: str | None = None,
         verbose: bool = False,
         lap_complete_percent: float = 0.95,
         domain_randomize: bool = False,
@@ -233,14 +231,14 @@ class CarRacing(gym.Env, EzPickle):
 
         self.contactListener_keepref = FrictionDetector(self, self.lap_complete_percent)
         self.world = Box2D.b2World((0, 0), contactListener=self.contactListener_keepref)
-        self.screen: Optional[pygame.Surface] = None
+        self.screen: pygame.Surface | None = None
         self.surf = None
         self.clock = None
         self.isopen = True
         self.invisible_state_window = None
         self.invisible_video_window = None
         self.road = None
-        self.car: Optional[Car] = None
+        self.car: Car | None = None
         self.reward = 0.0
         self.prev_reward = 0.0
         self.verbose = verbose
@@ -258,7 +256,7 @@ class CarRacing(gym.Env, EzPickle):
             )  # steer, gas, brake
         else:
             self.action_space = spaces.Discrete(5)
-            # do nothing, left, right, gas, brake
+            # do nothing, right, left, gas, brake
 
         self.observation_space = spaces.Box(
             low=0, high=255, shape=(STATE_H, STATE_W, 3), dtype=np.uint8
@@ -292,9 +290,9 @@ class CarRacing(gym.Env, EzPickle):
             self.grass_color = np.array([102, 230, 102])
 
     def _reinit_colors(self, randomize):
-        assert (
-            self.domain_randomize
-        ), "domain_randomize must be True to use this function."
+        assert self.domain_randomize, (
+            "domain_randomize must be True to use this function."
+        )
 
         if randomize:
             # domain randomize the bg and grass colour
@@ -404,7 +402,7 @@ class CarRacing(gym.Env, EzPickle):
                 i1 = i
                 break
         if self.verbose:
-            print("Track generation: %i..%i -> %i-tiles track" % (i1, i2, i2 - i1))
+            print(f"Track generation: {i1}..{i2} -> {i2 - i1}-tiles track")
         assert i1 != -1
         assert i2 != -1
 
@@ -499,8 +497,8 @@ class CarRacing(gym.Env, EzPickle):
     def reset(
         self,
         *,
-        seed: Optional[int] = None,
-        options: Optional[dict] = None,
+        seed: int | None = None,
+        options: dict | None = None,
     ):
         super().reset(seed=seed)
         self._destroy()
@@ -538,7 +536,7 @@ class CarRacing(gym.Env, EzPickle):
             self.render()
         return self.step(None)[0], {}
 
-    def step(self, action: Union[np.ndarray, int]):
+    def step(self, action: np.ndarray | int):
         assert self.car is not None
         if action is not None:
             if self.continuous:
@@ -640,7 +638,7 @@ class CarRacing(gym.Env, EzPickle):
         self._render_indicators(WINDOW_W, WINDOW_H)
 
         font = pygame.font.Font(pygame.font.get_default_font(), 42)
-        text = font.render("%04i" % self.reward, True, (255, 255, 255), (0, 0, 0))
+        text = font.render(f"{self.reward:04}", True, (255, 255, 255), (0, 0, 0))
         text_rect = text.get_rect()
         text_rect.center = (60, WINDOW_H - WINDOW_H * 2.5 / 40.0)
         self.surf.blit(text, text_rect)

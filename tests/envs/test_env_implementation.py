@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 import pytest
 
@@ -31,9 +29,9 @@ def test_lunar_lander_random_wind_seed(seed: int):
     w1, t1 = lunar_lander.wind_idx, lunar_lander.torque_idx
     lunar_lander.reset(seed=seed)
     w2, t2 = lunar_lander.wind_idx, lunar_lander.torque_idx
-    assert (
-        w1 == w2 and t1 == t2
-    ), "Setting same seed caused different initial wind or torque index"
+    assert w1 == w2 and t1 == t2, (
+        "Setting same seed caused different initial wind or torque index"
+    )
 
     # Test that different seed gives different wind
     # There is a small chance that different seeds causes same number so test
@@ -63,29 +61,27 @@ def test_carracing_domain_randomize():
 
     env.reset(options={"randomize": False})
 
-    assert (
-        road_color == env.road_color
-    ).all(), f"Have different road color after reset with randomize turned off. Before: {road_color}, after: {env.road_color}."
-    assert (
-        bg_color == env.bg_color
-    ).all(), f"Have different bg color after reset with randomize turned off. Before: {bg_color}, after: {env.bg_color}."
-    assert (
-        grass_color == env.grass_color
-    ).all(), f"Have different grass color after reset with randomize turned off. Before: {grass_color}, after: {env.grass_color}."
+    assert (road_color == env.road_color).all(), (
+        f"Have different road color after reset with randomize turned off. Before: {road_color}, after: {env.road_color}."
+    )
+    assert (bg_color == env.bg_color).all(), (
+        f"Have different bg color after reset with randomize turned off. Before: {bg_color}, after: {env.bg_color}."
+    )
+    assert (grass_color == env.grass_color).all(), (
+        f"Have different grass color after reset with randomize turned off. Before: {grass_color}, after: {env.grass_color}."
+    )
 
     env.reset()
 
-    assert (
-        road_color != env.road_color
-    ).all(), f"Have same road color after reset. Before: {road_color}, after: {env.road_color}."
-    assert (
-        bg_color != env.bg_color
-    ).all(), (
+    assert (road_color != env.road_color).all(), (
+        f"Have same road color after reset. Before: {road_color}, after: {env.road_color}."
+    )
+    assert (bg_color != env.bg_color).all(), (
         f"Have same bg color after reset. Before: {bg_color}, after: {env.bg_color}."
     )
-    assert (
-        grass_color != env.grass_color
-    ).all(), f"Have same grass color after reset. Before: {grass_color}, after: {env.grass_color}."
+    assert (grass_color != env.grass_color).all(), (
+        f"Have same grass color after reset. Before: {grass_color}, after: {env.grass_color}."
+    )
 
 
 def test_slippery_cliffwalking():
@@ -203,10 +199,87 @@ def test_taxi_encode_decode():
 
     state, info = env.reset()
     for _ in range(100):
-        assert (
-            env.encode(*env.decode(state)) == state
-        ), f"state={state}, encode(decode(state))={env.encode(*env.decode(state))}"
+        assert env.encode(*env.decode(state)) == state, (
+            f"state={state}, encode(decode(state))={env.encode(*env.decode(state))}"
+        )
         state, _, _, _, _ = env.step(env.action_space.sample())
+
+
+def test_taxi_is_rainy():
+    env = TaxiEnv(is_rainy=True)
+    for state_dict in env.P.values():
+        for action, transitions in state_dict.items():
+            if action <= 3:
+                assert sum([t[0] for t in transitions]) == 1
+                assert {t[0] for t in transitions} == {0.8, 0.1}
+            else:
+                assert len(transitions) == 1
+                assert transitions[0][0] == 1.0
+
+    state, _ = env.reset()
+    _, _, _, _, info = env.step(0)
+    assert info["prob"] in {0.8, 0.1}
+
+    env = TaxiEnv(is_rainy=False)
+    for state_dict in env.P.values():
+        for transitions in state_dict.values():
+            assert len(transitions) == 1
+            assert transitions[0][0] == 1.0
+
+    state, _ = env.reset()
+    _, _, _, _, info = env.step(0)
+    assert info["prob"] == 1.0
+
+
+def test_taxi_disallowed_transitions():
+    disallowed_transitions = [
+        ((0, 1), (0, 3)),
+        ((0, 3), (0, 1)),
+        ((1, 0), (1, 2)),
+        ((1, 2), (1, 0)),
+        ((3, 1), (3, 3)),
+        ((3, 3), (3, 1)),
+        ((3, 3), (3, 5)),
+        ((3, 5), (3, 3)),
+        ((4, 1), (4, 3)),
+        ((4, 3), (4, 1)),
+        ((4, 3), (4, 5)),
+        ((4, 5), (4, 3)),
+    ]
+    for rain in {True, False}:
+        env = TaxiEnv(is_rainy=rain)
+        for state, state_dict in env.P.items():
+            start_row, start_col, _, _ = env.decode(state)
+            for transitions in state_dict.values():
+                for transition in transitions:
+                    end_row, end_col, _, _ = env.decode(transition[1])
+                    assert (
+                        (start_row, start_col),
+                        (end_row, end_col),
+                    ) not in disallowed_transitions
+
+
+def test_taxi_fickle_passenger():
+    env = TaxiEnv(fickle_passenger=True)
+    # This is a fickle seed, if randomness or the draws from the PRNG were recently updated, find a new seed
+    env.reset(seed=43)
+    state, *_ = env.step(0)
+    taxi_row, taxi_col, pass_idx, orig_dest_idx = env.decode(state)
+    # force taxi to passenger location
+    env.s = env.encode(
+        env.locs[pass_idx][0], env.locs[pass_idx][1], pass_idx, orig_dest_idx
+    )
+    # pick up the passenger
+    env.step(4)
+    if env.locs[pass_idx][0] == 0:
+        # if we're on the top row, move down
+        state, *_ = env.step(0)
+    else:
+        # otherwise move up
+        state, *_ = env.step(1)
+    taxi_row, taxi_col, pass_idx, dest_idx = env.decode(state)
+    # check that passenger has changed their destination
+    assert orig_dest_idx != dest_idx
 
 
 @pytest.mark.parametrize(
@@ -216,7 +289,7 @@ def test_taxi_encode_decode():
 @pytest.mark.parametrize(
     "low_high", [None, (-0.4, 0.4), (np.array(-0.4), np.array(0.4))]
 )
-def test_customizable_resets(env_name: str, low_high: Optional[list]):
+def test_customizable_resets(env_name: str, low_high: list | None):
     env = gym.make(env_name)
     env.action_space.seed(0)
     # First ensure we can do a reset.
@@ -239,7 +312,7 @@ def test_customizable_resets(env_name: str, low_high: Optional[list]):
         (np.array(1.2), np.array(1.0)),
     ],
 )
-def test_customizable_pendulum_resets(low_high: Optional[list]):
+def test_customizable_pendulum_resets(low_high: list | None):
     env = gym.make("Pendulum-v1")
     env.action_space.seed(0)
     # First ensure we can do a reset and the values are within expected ranges.
@@ -301,7 +374,7 @@ def test_cartpole_vector_equiv():
     assert np.all(env.unwrapped.state == envs.unwrapped.state[:, 0])
 
     # step
-    for i in range(100):
+    for _ in range(100):
         action = env.action_space.sample()
         assert np.array([action]) in envs.action_space
 

@@ -8,7 +8,6 @@ import pytest
 import gymnasium as gym
 from gymnasium.wrappers import AtariPreprocessing
 
-
 pytest.importorskip("ale_py")
 
 
@@ -46,6 +45,17 @@ pytest.importorskip("ale_py")
                 grayscale_newaxis=True,
             ),
             (84, 84, 1),
+        ),
+        (
+            AtariPreprocessing(
+                gym.make("ALE/Pong-v5"),
+                screen_size=(160, 210),
+                grayscale_obs=False,
+                frame_skip=1,
+                noop_max=0,
+                grayscale_newaxis=True,
+            ),
+            (210, 160, 3),
         ),
     ],
 )

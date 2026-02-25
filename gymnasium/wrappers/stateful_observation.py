@@ -22,7 +22,6 @@ from gymnasium.spaces import Box, Dict, Tuple
 from gymnasium.vector.utils import batch_space, concatenate, create_empty_array
 from gymnasium.wrappers.utils import RunningMeanStd, create_zero_array
 
-
 __all__ = [
     "DelayObservation",
     "TimeAwareObservation",
@@ -198,9 +197,18 @@ class TimeAwareObservation(
         if env.spec is not None and env.spec.max_episode_steps is not None:
             self.max_timesteps = env.spec.max_episode_steps
         else:
-            raise ValueError(
-                "The environment must be wrapped by a TimeLimit wrapper or the spec specify a `max_episode_steps`."
-            )
+            # else we need to loop through the environment stack to check if a `TimeLimit` wrapper exists
+            wrapped_env = env
+            while isinstance(wrapped_env, gym.Wrapper):
+                if isinstance(wrapped_env, gym.wrappers.TimeLimit):
+                    self.max_timesteps = wrapped_env._max_episode_steps
+                    break
+                wrapped_env = wrapped_env.env
+
+            if not isinstance(wrapped_env, gym.wrappers.TimeLimit):
+                raise ValueError(
+                    "The environment must be wrapped by a TimeLimit wrapper or the spec specify a `max_episode_steps`."
+                )
 
         self.timesteps: int = 0
 

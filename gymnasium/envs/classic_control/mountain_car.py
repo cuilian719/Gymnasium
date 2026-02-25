@@ -4,7 +4,6 @@ permalink: https://perma.cc/6Z2N-PFWC
 """
 
 import math
-from typing import Optional
 
 import numpy as np
 
@@ -106,7 +105,7 @@ class MountainCarEnv(gym.Env):
         "render_fps": 30,
     }
 
-    def __init__(self, render_mode: Optional[str] = None, goal_velocity=0):
+    def __init__(self, render_mode: str | None = None, goal_velocity=0):
         self.min_position = -1.2
         self.max_position = 0.6
         self.max_speed = 0.07
@@ -131,9 +130,9 @@ class MountainCarEnv(gym.Env):
         self.observation_space = spaces.Box(self.low, self.high, dtype=np.float32)
 
     def step(self, action: int):
-        assert self.action_space.contains(
-            action
-        ), f"{action!r} ({type(action)}) invalid"
+        assert self.action_space.contains(action), (
+            f"{action!r} ({type(action)}) invalid"
+        )
 
         position, velocity = self.state
         velocity += (action - 1) * self.force + math.cos(3 * position) * (-self.gravity)
@@ -157,8 +156,8 @@ class MountainCarEnv(gym.Env):
     def reset(
         self,
         *,
-        seed: Optional[int] = None,
-        options: Optional[dict] = None,
+        seed: int | None = None,
+        options: dict | None = None,
     ):
         super().reset(seed=seed)
         # Note that if you use custom reset bounds, it may lead to out-of-bound
@@ -215,7 +214,7 @@ class MountainCarEnv(gym.Env):
 
         xs = np.linspace(self.min_position, self.max_position, 100)
         ys = self._height(xs)
-        xys = list(zip((xs - self.min_position) * scale, ys * scale))
+        xys = list(zip((xs - self.min_position) * scale, ys * scale, strict=True))
 
         pygame.draw.aalines(self.surf, points=xys, closed=False, color=(0, 0, 0))
 

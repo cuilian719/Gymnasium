@@ -1,7 +1,5 @@
 """classic Acrobot task"""
 
-from typing import Optional
-
 import numpy as np
 from numpy import cos, pi, sin
 
@@ -9,7 +7,6 @@ import gymnasium as gym
 from gymnasium import Env, spaces
 from gymnasium.envs.classic_control import utils
 from gymnasium.error import DependencyNotInstalled
-
 
 __copyright__ = "Copyright 2013, RLPy http://acl.mit.edu/RLPy"
 __credits__ = [
@@ -172,7 +169,7 @@ class AcrobotEnv(Env):
     domain_fig = None
     actions_num = 3
 
-    def __init__(self, render_mode: Optional[str] = None):
+    def __init__(self, render_mode: str | None = None):
         self.render_mode = render_mode
         self.screen = None
         self.clock = None
@@ -185,12 +182,14 @@ class AcrobotEnv(Env):
         self.action_space = spaces.Discrete(3)
         self.state = None
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
+    def reset(self, *, seed: int | None = None, options: dict | None = None):
         super().reset(seed=seed)
         # Note that if you use custom reset bounds, it may lead to out-of-bound
         # state/observations.
         low, high = utils.maybe_parse_reset_bounds(
-            options, -0.1, 0.1  # default low
+            options,
+            -0.1,
+            0.1,  # default low
         )  # default high
         self.state = self.np_random.uniform(low=low, high=high, size=(4,)).astype(
             np.float32
@@ -325,12 +324,7 @@ class AcrobotEnv(Env):
             self.LINK_LENGTH_1 * sin(s[0]) * scale,
         ]
 
-        p2 = [
-            p1[0] - self.LINK_LENGTH_2 * cos(s[0] + s[1]) * scale,
-            p1[1] + self.LINK_LENGTH_2 * sin(s[0] + s[1]) * scale,
-        ]
-
-        xys = np.array([[0, 0], p1, p2])[:, ::-1]
+        xys = np.array([[0, 0], p1])[:, ::-1]
         thetas = [s[0] - pi / 2, s[0] + s[1] - pi / 2]
         link_lengths = [self.LINK_LENGTH_1 * scale, self.LINK_LENGTH_2 * scale]
 
@@ -341,7 +335,7 @@ class AcrobotEnv(Env):
             color=(0, 0, 0),
         )
 
-        for (x, y), th, llen in zip(xys, thetas, link_lengths):
+        for (x, y), th, llen in zip(xys, thetas, link_lengths, strict=True):
             x = x + offset
             y = y + offset
             l, r, t, b = 0, llen, 0.1 * scale, -0.1 * scale

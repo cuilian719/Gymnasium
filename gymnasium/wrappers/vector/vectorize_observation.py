@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from copy import deepcopy
-from typing import Any, Callable, Sequence
+from typing import Any
 
 import numpy as np
 
@@ -57,18 +58,35 @@ class TransformObservation(VectorObservationWrapper):
         env: VectorEnv,
         func: Callable[[ObsType], Any],
         observation_space: Space | None = None,
+        single_observation_space: Space | None = None,
     ):
         """Constructor for the transform observation wrapper.
 
         Args:
             env: The vector environment to wrap
             func: A function that will transform the vector observation. If this transformed observation is outside the observation space of ``env.observation_space`` then provide an ``observation_space``.
-            observation_space: The observation spaces of the wrapper, if None, then it is assumed the same as ``env.observation_space``.
+            observation_space: The observation spaces of the wrapper. If None, then it is computed from ``single_observation_space``. If ``single_observation_space`` is not provided either, then it is assumed to be the same as ``env.observation_space``.
+            single_observation_space: The observation space of the non-vectorized environment. If None, then it is assumed the same as ``env.single_observation_space``.
         """
         super().__init__(env)
 
-        if observation_space is not None:
+        if observation_space is None:
+            if single_observation_space is not None:
+                self.single_observation_space = single_observation_space
+                self.observation_space = batch_space(
+                    single_observation_space, self.num_envs
+                )
+        else:
             self.observation_space = observation_space
+            if single_observation_space is not None:
+                self._single_observation_space = single_observation_space
+            # TODO: We could compute single_observation_space from the observation_space if only the latter is provided and avoid the warning below.
+        if self.observation_space != batch_space(
+            self.single_observation_space, self.num_envs
+        ):
+            warn(
+                f"For {env}, the observation space and the batched single observation space don't match as expected, observation_space={env.observation_space}, batched single_observation_space={batch_space(self.single_observation_space, self.num_envs)}"
+            )
 
         self.func = func
 
@@ -171,7 +189,7 @@ class VectorizeTransformObservation(VectorObservationWrapper):
             final_obs = infos["final_obs"]
 
             for i, (sub_obs, has_final_obs) in enumerate(
-                zip(final_obs, infos["_final_obs"])
+                zip(final_obs, infos["_final_obs"], strict=True)
             ):
                 if has_final_obs:
                     final_obs[i] = self.wrapper.observation(sub_obs)

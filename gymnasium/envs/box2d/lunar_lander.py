@@ -1,7 +1,7 @@
 __credits__ = ["Andrea PIERRÉ"]
 
 import math
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -10,7 +10,6 @@ from gymnasium import error, spaces
 from gymnasium.error import DependencyNotInstalled
 from gymnasium.utils import EzPickle
 from gymnasium.utils.step_api_compatibility import step_api_compatibility
-
 
 try:
     import Box2D
@@ -213,7 +212,7 @@ class LunarLander(gym.Env, EzPickle):
 
     def __init__(
         self,
-        render_mode: Optional[str] = None,
+        render_mode: str | None = None,
         continuous: bool = False,
         gravity: float = -10.0,
         enable_wind: bool = False,
@@ -230,9 +229,9 @@ class LunarLander(gym.Env, EzPickle):
             turbulence_power,
         )
 
-        assert (
-            -12.0 < gravity and gravity < 0.0
-        ), f"gravity (current value: {gravity}) must be between -12 and 0"
+        assert -12.0 < gravity and gravity < 0.0, (
+            f"gravity (current value: {gravity}) must be between -12 and 0"
+        )
         self.gravity = gravity
 
         if 0.0 > wind_power or wind_power > 20.0:
@@ -254,7 +253,7 @@ class LunarLander(gym.Env, EzPickle):
         self.isopen = True
         self.world = Box2D.b2World(gravity=(0, gravity))
         self.moon = None
-        self.lander: Optional[Box2D.b2Body] = None
+        self.lander: Box2D.b2Body | None = None
         self.particles = []
 
         self.prev_reward = None
@@ -323,8 +322,8 @@ class LunarLander(gym.Env, EzPickle):
     def reset(
         self,
         *,
-        seed: Optional[int] = None,
-        options: Optional[dict] = None,
+        seed: int | None = None,
+        options: dict | None = None,
     ):
         super().reset(seed=seed)
         self._destroy()
@@ -511,9 +510,9 @@ class LunarLander(gym.Env, EzPickle):
         if self.continuous:
             action = np.clip(action, -1, +1).astype(np.float64)
         else:
-            assert self.action_space.contains(
-                action
-            ), f"{action!r} ({type(action)}) invalid "
+            assert self.action_space.contains(action), (
+                f"{action!r} ({type(action)}) invalid "
+            )
 
         # Apply Engine Impulses
 

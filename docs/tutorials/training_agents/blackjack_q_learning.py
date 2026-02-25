@@ -1,7 +1,8 @@
 """
-Solving Blackjack with Q-Learning
-=================================
+Solving Blackjack with Tabular Q-Learning
+=========================================
 
+This tutorial trains an agent for BlackJack using tabular Q-learning.
 """
 
 # %%
@@ -55,7 +56,6 @@ from matplotlib.patches import Patch
 from tqdm import tqdm
 
 import gymnasium as gym
-
 
 # Let's start by creating the blackjack environment.
 # Note: We are going to follow the rules from Sutton & Barto.
@@ -275,7 +275,7 @@ agent = BlackjackAgent(
 #
 
 
-env = gym.wrappers.RecordEpisodeStatistics(env, deque_size=n_episodes)
+env = gym.wrappers.RecordEpisodeStatistics(env, buffer_length=n_episodes)
 for episode in tqdm(range(n_episodes)):
     obs, info = env.reset()
     done = False

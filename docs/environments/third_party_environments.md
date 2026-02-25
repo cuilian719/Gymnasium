@@ -112,6 +112,13 @@ goal-RL ([Gymnasium-Robotics](https://robotics.farama.org/)).
 ### Game environments
 *Board Games, Video Games and all other interactive entrainment mediums.*
 
+- [Advanced Minesweeper Environment](https://github.com/markov-labs/RL-Minesweeper)
+
+  ![Gymnasium version dependency](https://img.shields.io/badge/Gymnasium-v1.1.1-blue)
+  ![GitHub stars](https://img.shields.io/github/stars/markov-labs/RL-Minesweeper)
+
+  This is a custom minesweeper gymnasium environment that allows for an optional custom mask for added complexity. Fully customizable with board size, mine density and custom masks.
+
 - [Craftium: an extensible framework for creating RL environments](https://github.com/mikelma/craftium)
 
   ![Gymnasium version dependency](https://img.shields.io/badge/Gymnasium-v0.29.1-blue)
@@ -140,6 +147,13 @@ goal-RL ([Gymnasium-Robotics](https://robotics.farama.org/)).
 
   Generals.io is a fast-paced strategy game on a 2D grid. We make bot development accessible via the Gymnasium/PettingZoo API.
 
+- [Pickomino (Heckmeck): Dice and Tile game](https://github.com/smallgig/Pickomino)
+
+  ![Gymnasium version dependency](https://img.shields.io/badge/Gymnasium-v1.2.3-blue)
+  ![GitHub stars](https://img.shields.io/github/stars/smallgig/Pickomino)
+
+  Push your luck dice game with a twist. Your agent plays against 1 to 6 bots.
+
 - [pystk2-gymnasium: SuperTuxKart races gymnasium wrapper](https://github.com/bpiwowar/pystk2-gymnasium)
 
   ![Gymnasium version dependency](https://img.shields.io/badge/Gymnasium-v0.29.1-blue)
@@ -153,6 +167,13 @@ goal-RL ([Gymnasium-Robotics](https://robotics.farama.org/)).
   ![GitHub stars](https://img.shields.io/github/stars/smanolloff/qwop-gym)
 
   QWOP is a game about running extremely fast down a 100 meter track. With this Gymnasium environment you can train your own agents and try to beat the current world record (5.0 in-game seconds for humans and 4.7 for AI).
+
+- [Reinforce Tactics: 2D Turned-Based Strategy Game](https://github.com/kuds/reinforce-tactics)
+
+  ![Gymnasium version dependency](https://img.shields.io/badge/Gymnasium-v1.2.1-blue)
+  ![GitHub stars](https://img.shields.io/github/stars/kuds/reinforce-tactics)
+
+  Reinforce Tactics is a turn-based strategy game designed for reinforcement learning research, combining tactical grid-based combat with an economy system while supporting multiple AI opponent types including rule-based bots, LLM-powered agents, and trainable RL models.
 
 - [Tetris Gymnasium: A fully configurable Gymnasium compatible Tetris environment](https://github.com/Max-We/Tetris-Gymnasium)
 
@@ -190,6 +211,13 @@ goal-RL ([Gymnasium-Robotics](https://robotics.farama.org/)).
 ### Robotics environments
 *Autonomous Robots.*
 
+- [aas-gym: PX4 and ArduPilot multi-drone SITL simulation with YOLO and LiDAR](https://github.com/JacopoPan/aerial-autonomy-stack)
+
+  ![Gymnasium version dependency](https://img.shields.io/badge/Gymnasium-v1.2.2-blue)
+  ![GitHub stars](https://img.shields.io/github/stars/JacopoPan/aerial-autonomy-stack)
+
+  Multi-drone PX4 and ArduPilot ROS2 control of quadrotors and VTOL planes in Gazebo Sim, with YOLO, LiDAR, Dockerized Gym simulation, and JetPack deployment.
+
 - [BSK-RL: Environments for Spacecraft Planning and Scheduling](https://avslab.github.io/bsk_rl/)
 
   ![Gymnasium version dependency](https://img.shields.io/badge/Gymnasium-v0.28.1-blue)
@@ -221,10 +249,17 @@ goal-RL ([Gymnasium-Robotics](https://robotics.farama.org/)).
 
 - [gym-pybullet-drones: Environments for quadcopter control](https://github.com/JacopoPan/gym-pybullet-drones)
 
-  ![Gymnasium version dependency](https://img.shields.io/badge/Gymnasium-v0.27.1-blue)
+  ![Gymnasium version dependency](https://img.shields.io/badge/Gymnasium-v1.2.2-blue)
   ![GitHub stars](https://img.shields.io/github/stars/JacopoPan/gym-pybullet-drones)
 
   A simple environment using [PyBullet](https://github.com/bulletphysics/bullet3) to simulate the dynamics of a [Bitcraze Crazyflie 2.x](https://www.bitcraze.io/documentation/hardware/crazyflie_2_1/crazyflie_2_1-datasheet.pdf) nanoquadrotor.
+
+- [gymnasium-docker-ros2: Gymnasium wrapping of Dockerized Gazebo/ROS2 simulation](https://github.com/JacopoPan/gymnasium-docker-ros2)
+
+  ![Gymnasium version dependency](https://img.shields.io/badge/Gymnasium-v1.2.2-blue)
+  ![GitHub stars](https://img.shields.io/github/stars/JacopoPan/gymnasium-docker-ros2)
+
+  GDR2 shows how to wrap a multi-container Docker/Gazebo/ROS2 app into [`gymnasium`](https://github.com/Farama-Foundation/Gymnasium) and train [`stable-baselines3`](https://github.com/DLR-RM/stable-baselines3)'s PPO, using [`pyzmq`](https://github.com/zeromq/pyzmq) for communication and `gz service` to synchronously step the `/clock`
 
 - [Itomori: UAV Risk-aware Flight Environment](https://github.com/gustavo-moura/itomori)
 
@@ -249,6 +284,12 @@ goal-RL ([Gymnasium-Robotics](https://robotics.farama.org/)).
   A library for testing reinforcement learning algorithms on various UAVs.
   It is built on the [Bullet](https://github.com/bulletphysics/bullet3) physics engine, offers flexible rendering options, time-discrete steppable physics, Python bindings, and support for custom drones of any configuration, be it biplanes, quadcopters, rockets, and anything you can think of.
 
+- [relign: Active alignments of optical systems](https://github.com/hs-kempten/relign)
+
+  ![GitHub stars](https://img.shields.io/github/stars/hs-kempten/relign)
+
+  An environment for active alignments of lens systems with reinforcement learning using high-dimensional optical sensor output as observation.
+
 - [safe-control-gym: Evaluate safety of RL algorithms](https://github.com/utiasDSL/safe-control-gym)
 
   Evaluate safety, robustness and generalization via PyBullet based CartPole and Quadrotor environments—with [CasADi](https://web.casadi.org) (symbolic) *a priori* dynamics and constraints.
@@ -260,7 +301,12 @@ goal-RL ([Gymnasium-Robotics](https://robotics.farama.org/)).
 
   Highly scalable and customizable Safe Reinforcement Learning library.
 
+- [deformable_gym: RL environments for grasping deformable objects](https://github.com/dfki-ric/deformable_gym)
 
+  A collection of gymnasium environments for learning to grasp 3D deformable objects built with PyBullet and Mujoco.
+
+  ![Gymnasium version dependency](https://img.shields.io/badge/Gymnasium-v1.0.0-blue)
+  ![GitHub stars](https://img.shields.io/github/stars/dfki-ric/deformable_gym)
 ### Telecommunication Systems environments
 *Interact and/or manage wireless and/or wired telecommunication systems.*
 - [mobile-env: Environments for coordination of wireless mobile networks](https://github.com/stefanbschneider/mobile-env)
@@ -306,6 +352,21 @@ goal-RL ([Gymnasium-Robotics](https://robotics.farama.org/)).
   ![GitHub stars](https://img.shields.io/github/stars/sparisi/gym_gridworlds)
 
   The default class implements a "go-to goal", but it can be easily customized for different tasks, with a variety of grids, rewards, dynamics, and tasks. It supports different observation types (discrete, coordinates, binary, pixels, partial). Useful for quickly testing and prototyping RL algorithms, both tabular and with function approximation.
+
+- [Gym4ReaL](https://github.com/Daveonwave/gym4ReaL)
+
+   ![Gymnasium version dependency](https://img.shields.io/badge/Gymnasium-v1.1.1-blue)
+  ![GitHub stars](https://img.shields.io/github/stars/Daveonwave/gym4ReaL)
+
+
+  Gym4ReaL is a comprehensive suite of realistic environments designed to support the development and evaluation of RL algorithms that can operate in real-world scenarios.
+The suite includes a diverse set of tasks exposing RL algorithms to a variety of practical challenges, such as water management, energy management in microgrids, financial trading, and more.
+
+- [LineFlow: Active control of production lines](https://github.com/hs-kempten/lineflow)
+
+  ![GitHub stars](https://img.shields.io/github/stars/hs-kempten/lineflow)
+
+  An environment to learn active control of production lines with reinforcement learning.
 
 - [matrix-mdp: Easily create discrete MDPs](https://github.com/Paul-543NA/matrix-mdp-gym)
 
